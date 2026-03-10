@@ -1,10 +1,6 @@
-# The Mirror Browser
-面向算法透明度的用户行为追踪与隐私可视化交互产品
-
-[**在线演示地址**](https://kaihaoz.github.io/The-Mirror-Browser/)
-
 # The Mirror Browser：算法透明度浏览器交互原型
-🔗 在线演示地址：https://your-username.github.io/The-Mirror-Browser/
+
+🔗 [**在线演示地址**](https://your-username.github.io/The-Mirror-Browser/)
 
 ## 一、产品背景与核心目标
 ### 核心问题
