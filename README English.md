@@ -1,21 +1,37 @@
 # The Mirror Browser
-User Web Behavior Tracking & Algorithmic Transparency Visualization
+🔗 **Live Demo**: https://your-username.github.io/The-Mirror-Browser/
 
-## Overview
-This is an independent interactive product project based on Research-through-Design (RtD) methodology. I designed and implemented a complete interactive prototype to track user web behaviors (clicks, hovers, scroll depth) and visualize algorithm logic through a three-layer transparency system, solving users' privacy anxiety caused by "black-box" algorithms.
+## Project Overview
+This project is an interactive prototype developed based on the Research-through-Design methodology, focusing on exploring the implementation path of "algorithmic transparency" in browser products. It aims to solve users' privacy anxiety caused by "black-box" algorithms through real-time behavior tracking and interest profile visualization, while balancing privacy compliance and user experience.
 
-The project balances privacy compliance and user experience, and explores a feasible path for algorithm transparency in domestic Internet products.
+## 🎯 Core Features
+### ✅ Implemented Functions
+- Real-time user behavior tracking: Collect clicks, hovers, scroll depth, and mouse movement data (with data desensitization to protect privacy)
+- 6-dimensional user interest profiling: Technology / Science / Lifestyle / Art & Design / Finance / Gaming
+- Cookie privacy authorization panel (compliant with privacy protection norms)
+- Basic interest radar chart visualization: Dynamically updated based on behavioral data
+- Real-time profile progress bar display in sidebar
+- Search filtering function for content cards
 
-## Core Implementation
-- Independently completed product design, interaction logic planning and front-end development
-- Built real-time user behavior tracking system with HTML5/JavaScript (clicks, hover duration, scroll depth, stay time)
-- Designed a three-layer algorithm transparency system: micro-explanations, real-time user profile sidebar, data dashboard
-- Implemented multi-dimensional visualization (radar chart, heatmap) with Chart.js
-- Completed user testing with 29 target users and optimized interaction logic based on feedback
-- Summarized a reusable design framework for algorithm transparency
+### 🚧 To Be Optimized (Reflection & Improvement)
+- Heatmap rendering efficiency optimization (basic coordinate display only at present)
+- Improvement of data export function in analysis panel
+- Mobile responsive layout adaptation
+- User testing data statistics and analysis
 
-## Tech Stack
-HTML5, CSS3, JavaScript, Chart.js, User Testing, Interaction Design, Data Visualization
+## 📝 Research Focus
+1. Designed a "three-layer transparency system": 
+   - Behavior collection layer: Non-intrusive user behavior data acquisition
+   - Interest analysis layer: 6-dimensional interest tag normalization algorithm
+   - Visualization layer: Radar chart + heatmap dual-mode display
+2. Proposed a 6-dimensional user interest tag system to balance data collection and privacy protection
+3. Verified the improvement effect of "real-time visualization" on users' algorithm understanding (user test data to be supplemented)
 
-## Project Value
-This project provides an implementable design method for algorithm transparency and privacy experience optimization. It can be widely applied to privacy-compliant products, data platforms, content products and interactive creative tools.# The-Mirror-Browser
+## 🔍 Key Code Logic
+### 1. Scroll Depth Tracking (index.html)
+```javascript
+addEventListener('scroll', () => {
+  const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const depth = Math.round((window.scrollY / docHeight) * 100);
+  metrics.scrollDepth = Math.max(metrics.scrollDepth, depth);
+});
