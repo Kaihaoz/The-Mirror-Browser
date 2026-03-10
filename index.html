@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Mirror Browser</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div id="cookieConsent">
+    <h3>This website tracks your behavior to personalize content.</h3>
+    <button id="acceptBtn">Accept</button>
+    <button id="rejectBtn">Reject</button>
+  </div>
+
+  <div id="app" style="display:none;">
+    <div class="feed">
+      <div id="newsSection" class="card-grid"></div>
+      <div id="videoSection" class="card-grid"></div>
+      <div id="socialSection" class="card-grid"></div>
+      <div id="goodsSection" class="card-grid"></div>
+    </div>
+
+    <div id="sidebar">
+      <div id="profile"></div>
+      <div id="recommendations"></div>
+    </div>
+
+    <div id="analysisPanel">
+      <canvas id="radarChart"></canvas>
+      <canvas id="heatmapCanvas"></canvas>
+    </div>
+  </div>
+
+  <script src="code/app.js"></script>
+  <script src="code/behavior.js"></script>
+  <script src="code/persona.js"></script>
+  <script src="code/radar.js"></script>
+  <script src="code/heatmap.js"></script>
+  <script src="code/analysis.js"></script>
+</body>
+</html>
