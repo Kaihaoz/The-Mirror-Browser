@@ -1,5 +1,6 @@
 # The Mirror Browser
 面向算法透明度的用户行为追踪与隐私可视化交互产品
+[**在线演示地址**](https://kaihaoz.github.io/The-Mirror-Browser/)
 
 ## 项目介绍
 这是我独立完成的交互产品项目，基于研究性设计（RtD）方法构建。
