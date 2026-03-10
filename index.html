@@ -1,41 +1,903 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>The Mirror Browser</title>
-  <link rel="stylesheet" href="styles/main.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Your Daily Feed — AI Profile (EN, Cold Tech)</title>
+<style>
+    /* Global Styling Variables */
+    :root{
+      --bg:#f7f8fb; --text:#0f172a; --muted:#6b7280; --line:#e5e7eb; --card:#ffffff;
+      --pri:#2563eb; --ok:#059669; --warn:#b45309; --cold:#0ea5e9; --cold-20:rgba(14,165,233,.12);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,Inter,Arial}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line)}
+    .wrap{max-width:1160px;margin:0 auto;padding:14px 16px}
+    .top{display:flex;gap:14px;align-items:center}
+    .brand{font-weight:800;color:var(--pri);font-size:24px;letter-spacing:-.025em}
+    .nav-btn{padding:6px 14px;border-radius:9999px;cursor:pointer;font-weight:600;transition:all .2s;border:1px solid transparent}
+    .nav-btn.active{background:var(--pri);color:#fff}
+    .nav-btn:not(.active):hover{background:var(--line);border-color:var(--line)}
+    /* 移除了 margin-left: auto; 以便搜索栏可以正确排列 */
+    .reset-btn{background:var(--warn);color:#fff;border-radius:9999px;padding:6px 12px;font-size:14px;cursor:pointer;transition:background .2s}
+    .reset-btn:hover{background:#c24100}
+
+    /* Layout Sections */
+    #app{padding-top:20px;display:none}
+    .content-area{display:grid;grid-template-columns:3fr 1fr;gap:24px}
+
+    /* Content Cards */
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:20px}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:pointer;border:1px solid var(--line)}
+    .card:hover{transform:translateY(-2px);box-shadow:0 4px 6px rgba(0,0,0,.1);border-color:var(--pri)}
+
+    .card-img-wrap{height:180px;overflow:hidden;background:var(--bg)}
+    .card-img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+    .card:hover .card-img{transform:scale(1.05)}
+    .card-content{padding:16px}
+    .card-tag{display:inline-block;padding:2px 8px;font-size:12px;font-weight:600;border-radius:4px;margin-bottom:8px}
+    .news-tag{background:#fef3c7;color:#b45309}
+    .video-tag{background:#dbeafe;color:#2563eb}
+    .social-tag{background:#e0f2f1;color:#047876}
+    .goods-tag{background:#fce7f3;color:#be185d}
+    .card-title{font-size:18px;font-weight:700;line-height:1.4;margin-bottom:4px}
+    .card-text{font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:40px}
+
+    /* Recommendation Sidebar (Profile) */
+    .profile-card{background:var(--card);padding:20px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid var(--line);position:sticky;top:70px}
+    .profile-title{font-size:18px;font-weight:700;color:var(--pri);margin-bottom:12px}
+    .profile-item{margin-bottom:8px;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+    .profile-item-val{font-weight:600}
+    .profile-bar-wrap{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+    .profile-bar{height:100%;background:var(--cold);transition:width .5s ease-out}
+    .profile-tip{font-size:14px;color:var(--muted);margin-top:20px;border-top:1px dashed var(--line);padding-top:12px}
+    /* [新增] 用于显示总和的样式 */
+    .profile-total{font-size:16px;font-weight:700;color:var(--pri);margin-top:10px;padding-top:10px;border-top:2px solid var(--pri)}
+    .recommendation-list{margin-top:16px}
+    .recommendation-item{background:var(--bg);border-radius:8px;padding:10px;margin-bottom:8px;font-size:14px}
+    .recommendation-item strong{color:var(--pri)}
+    .rec-tag{font-size:12px;font-weight:500;color:var(--text);background:var(--line);padding:2px 6px;border-radius:4px;margin-right:6px}
+
+    /* Detail View */
+    #detail{display:none;max-width:800px;margin:0 auto;background:var(--card);padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+    .detail-back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--pri);font-weight:600;margin-bottom:20px;cursor:pointer}
+    .detail-title{font-size:28px;font-weight:800;margin-bottom:16px;line-height:1.2}
+    .detail-tag{font-size:14px;font-weight:600;display:inline-block;margin-bottom:16px}
+    .detail-content-img{max-height:400px;width:100%;object-fit:cover;border-radius:8px;margin-bottom:20px}
+    .detail-text{font-size:16px;line-height:1.8}
+    .detail-content{padding-top:10px;border-top:1px solid var(--line)}
+
+    /* Analysis View */
+    #analysis{display:none}
+    .analysis-container{max-width:900px;margin:0 auto}
+    .analysis-header{text-align:center;margin-bottom:30px}
+    .analysis-header h1{font-size:36px;font-weight:800;color:var(--pri);margin-bottom:8px}
+    .analysis-header p{color:var(--muted);font-size:18px}
+
+    .metrics-section{background:var(--card);padding:25px;border-radius:12px;margin-bottom:25px;border:1px solid var(--line)}
+    .metrics-section h2{font-size:22px;font-weight:700;color:var(--text);margin-bottom:15px;border-bottom:2px solid var(--line);padding-bottom:8px}
+    .metric-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);font-size:16px}
+    .metric-item:last-child{border-bottom:none}
+    .metric-label{font-weight:500}
+    .metric-value{font-weight:700;color:var(--cold)}
+    .metric-item.high-val .metric-value{color:var(--warn)}
+
+    .profile-visualization{margin-top:20px}
+    .profile-visualization h3{font-size:18px;font-weight:600;margin-bottom:10px}
+    .chart-container{height:300px;background:var(--bg);border-radius:8px;padding:15px;position:relative}
+
+    /* Canvas for Heatmap Visualization */
+    #heatmapCanvas{width:100%;height:100%;border-radius:6px;background:var(--bg)}
+
+    /* Cold Start Explanation */
+    .explanation-card{background:var(--card);padding:25px;border-radius:12px;border:1px solid var(--cold)}
+    .explanation-card h2{color:var(--cold)}
+    .explanation-card p{color:var(--text);font-size:15px}
+
+    /* Overlay for Cookie Consent/Block */
+    #cookieOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:100;display:flex;justify-content:center;align-items:center}
+    .cookie-box{background:var(--card);padding:30px;border-radius:12px;text-align:center;max-width:400px;box-shadow:0 10px 25px rgba(0,0,0,.2)}
+    .cookie-box h2{color:var(--pri);margin-bottom:15px}
+    .cookie-box p{margin-bottom:25px;color:var(--muted)}
+    .cookie-btns button{padding:10px 20px;border-radius:6px;font-weight:600;cursor:pointer;margin:0 8px;border:none;transition:background .2s}
+    #acceptBtn{background:var(--ok);color:#fff}
+    #acceptBtn:hover{background:#047353}
+    #rejectBtn{background:var(--line);color:var(--text)}
+    #rejectBtn:hover{background:#d1d5db}
+
+    #blocked{display:none;text-align:center;padding:50px;font-size:20px;color:var(--warn)}
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+      .content-area{grid-template-columns:1fr;gap:20px}
+      .profile-card{position:static;margin-bottom:20px}
+    }
+    @media (max-width: 600px) {
+      .card-grid{grid-template-columns:1fr}
+      .top{flex-wrap:wrap}
+      /* [新增] 确保搜索栏在移动设备上正常显示 */
+      .search-container { width: 100%; order: 3; margin: 0; }
+      .nav-btn{padding:4px 10px}
+      .reset-btn{margin-top:0; margin-left: auto; order: 2;} /* 移动重置按钮到右上角 */
+      .brand { order: 1; }
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
 </head>
 <body>
-  <div id="cookieConsent">
-    <h3>This website tracks your behavior to personalize content.</h3>
-    <button id="acceptBtn">Accept</button>
-    <button id="rejectBtn">Reject</button>
-  </div>
 
-  <div id="app" style="display:none;">
-    <div class="feed">
-      <div id="newsSection" class="card-grid"></div>
-      <div id="videoSection" class="card-grid"></div>
-      <div id="socialSection" class="card-grid"></div>
-      <div id="goodsSection" class="card-grid"></div>
+<!-- Cookie Consent Overlay -->
+<div id="cookieOverlay">
+    <div class="cookie-box">
+        <h2>Cookie Consent</h2>
+        <p>We use cookies to personalize content, analyze traffic, and provide a better user experience. To participate in the AI profiling demo, please accept cookies.</p>
+        <div class="cookie-btns">
+            <button id="acceptBtn">Accept</button>
+            <button id="rejectBtn">Reject</button>
+        </div>
     </div>
+</div>
 
-    <div id="sidebar">
-      <div id="profile"></div>
-      <div id="recommendations"></div>
+<!-- Blocked Content -->
+<div id="blocked" class="wrap">
+    <h1>Cookies Rejected</h1>
+    <p>App features have been disabled. User behavior tracking is blocked. Please clear browser data or try again.</p>
+</div>
+
+<!-- Main Application -->
+<div id="app">
+    <header>
+        <div class="wrap top">
+            <div class="brand">Daily Feed</div>
+            
+            <!-- [新增] 搜索栏 HTML -->
+            <div class="search-container" style="flex-grow: 1; margin: 0 16px;">
+                <input type="search" id="searchBar" placeholder="Search feed by title or tag..." style="width: 100%; padding: 8px 12px; border-radius: 9999px; border: 1px solid var(--line); background-color: var(--bg);">
+            </div>
+
+            <!-- Navigation -->
+            <div class="nav-btn active" data-section="feed" onclick="showSection('feed')">Feed</div>
+            <div class="nav-btn" data-section="analysis" onclick="showSection('analysis')">Analysis</div>
+            <div class="reset-btn" id="resetBtn">Reset Profile</div>
+        </div>
+    </header>
+
+    <div class="wrap content-area">
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- FEED Section -->
+            <section id="feed">
+                <h2 class="profile-title">AI-Curated Selection</h2>
+
+                <!-- News Section -->
+                <div id="newsSection" class="section" data-section-name="news">
+                    <h3 class="card-title" style="margin-bottom: 12px;">News</h3>
+                    <div id="newsGrid" class="card-grid">
+                        <!-- News items will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Video Section -->
+                <div id="videoSection" class="section" data-section-name="video" style="margin-top: 20px;">
+                    <h3 class="card-title" style="margin-bottom: 12px;">Video</h3>
+                    <div id="videoGrid" class="card-grid">
+                        <!-- Video items will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Social Posts Section -->
+                <div id="socialSection" class="section" data-section-name="social" style="margin-top: 20px;">
+                    <h3 class="card-title" style="margin-bottom: 12px;">Social</h3>
+                    <div id="socialGrid" class="card-grid">
+                        <!-- Social items will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Goods Section -->
+                <div id="goodsSection" class="section" data-section-name="goods" style="margin-top: 20px;">
+                    <h3 class="card-title" style="margin-bottom: 12px;">Goods</h3>
+                    <div id="goodsGrid" class="card-grid">
+                        <!-- Goods items will be dynamically inserted here -->
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- DETAIL Section -->
+            <section id="detail">
+                <div class="detail-back-btn" onclick="showSection('feed')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Back to Feed
+                </div>
+                <div class="detail-tag" id="detailTag"></div>
+                <h1 class="detail-title" id="detailTitle"></h1>
+                <img id="detailImage" class="detail-content-img" alt="Detail Image" onerror="this.onerror=null; this.src='https://placehold.co/800x400/0ea5e9/ffffff?text=Content+Image'"/>
+                <div class="detail-content">
+                    <p class="detail-text" id="detailDescription"></p>
+                    <!-- Detail view will show specific item content -->
+                </div>
+            </section>
+
+            <!-- ANALYSIS Section -->
+            <section id="analysis">
+                <div class="analysis-container">
+                    <div class="analysis-header">
+                        <h1>Analyzing Your Interest Profile</h1>
+                        <p>The AI is observing you... every click, movement, and scroll contributes to your 'Cold Start' profile.</p>
+                    </div>
+
+                    <div class="metrics-section">
+                        <h2>Basic Metrics: User Behavior Tracking</h2>
+                        <div class="metric-item">
+                            <span class="metric-label">Clicks (Total)</span>
+                            <span class="metric-value" id="metricClicks">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Detail Views (Total)</span>
+                            <span class="metric-value" id="metricDetailViews">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Search/Filter Count</span>
+                            <span class="metric-value" id="metricSearchCount">0</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Mouse Movement Count (Approx)</span>
+                            <span class="metric-value" id="metricMoveCount">0</span>
+                        </div>
+                        <div class="metric-item high-val">
+                            <span class="metric-label">Max Scroll Depth (%)</span>
+                            <span class="metric-value" id="metricScrollDepth">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="metrics-section profile-visualization">
+                        <h2>Interest Profile Visualization</h2>
+                        <div class="chart-container">
+                            <canvas id="profileChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="metrics-section profile-visualization">
+                        <h2>Interaction Heatmap (Cold Data Points)</h2>
+                        <div class="chart-container">
+                            <canvas id="heatmapCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="explanation-card">
+                        <h2>Recommendation Engine: Cold Start Tech Overview</h2>
+                        <p>Cold start technology is a strategy to address data sparsity for new users or new items. In this demo, the profile is built entirely on your *initial* micro-interactions (clicks, movements, time on page) before traditional preference data is available. This profile is used to decide what to show you next.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Sidebar: AI Interest Profile -->
+        <aside>
+            <div class="profile-card">
+                <h2 class="profile-title">Your Interest Profile</h2>
+
+                <!-- Profile Items (Dynamically rendered) -->
+                <div id="profileItems">
+                    <!-- Profile dimensions will be inserted here -->
+                </div>
+
+                <div class="profile-tip">
+                    These initial interest scores (0-100) are generated entirely from your interaction data on this page.
+                </div>
+
+                <div class="recommendation-list">
+                    <h3 class="profile-title" style="margin-top:16px;">Recommendations:</h3>
+                    <div id="recommendations">
+                        <!-- Recommended sections will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </aside>
+
     </div>
+</div>
 
-    <div id="analysisPanel">
-      <canvas id="radarChart"></canvas>
-      <canvas id="heatmapCanvas"></canvas>
-    </div>
-  </div>
+<script>
+    // --- Global Configuration and Setup ---
 
-  <script src="code/app.js"></script>
-  <script src="code/behavior.js"></script>
-  <script src="code/persona.js"></script>
-  <script src="code/radar.js"></script>
-  <script src="code/heatmap.js"></script>
-  <script src="code/analysis.js"></script>
+    // Data structure for the different content categories (sections)
+    const contentData = {
+        'news': [
+            { id: 101, title: "Global Chip Shortage Impacts Auto Industry", desc: "Analysis of the current supply chain crisis and its effect on car manufacturing worldwide.", tags: ["Technology", "Business", "Economy"] },
+            { id: 102, title: "Deep Sea Exploration Reveals New Species", desc: "A research team discovers several previously unknown bioluminescent organisms in the Mariana Trench.", tags: ["Science", "Nature", "Exploration"] },
+            { id: 103, title: "New Policy on Remote Work Announced by Major Tech Firms", desc: "Leading tech companies outline their long-term plans for hybrid and fully remote work models.", tags: ["Career", "Technology", "Policy"] },
+            { id: 104, title: "Local Team Wins Championship After Dramatic Final Game", desc: "An unexpected victory fuels celebration across the city, breaking a decades-long drought.", tags: ["Sports", "Local", "Community"] },
+        ],
+        'video': [
+            { id: 201, title: "DIY Home Server Build Guide (Advanced)", desc: "A step-by-step video tutorial on assembling and configuring a powerful home data server.", tags: ["Technology", "DIY", "Hardware"] },
+            { id: 202, title: "A Day in the Life of a Minimalist Architect", desc: "Explore the clean design philosophies and daily routine of a celebrated minimalist architect.", tags: ["Lifestyle", "Design", "Art"] },
+            { id: 203, title: "The History of AI in Gaming", desc: "Documentary tracing the evolution of non-player character (NPC) intelligence from the 1980s to today.", tags: ["Gaming", "History", "Technology"] },
+            { id: 204, title: "Simple 30-Minute Mediterranean Dinner Recipe", desc: "A quick and healthy cooking video for a traditional Greek lemon chicken and potatoes dish.", tags: ["Food", "Cooking", "Health"] },
+        ],
+        'social': [
+            { id: 301, title: "Post: Just launched my new Python library for data visualization!", desc: "A developer shares their excitement about releasing a new open-source tool and asks for feedback.", tags: ["Technology", "Programming", "Open Source"] },
+            { id: 302, title: "Post: Morning hike views were absolutely stunning. #NatureLover", desc: "User shares high-quality photos and short video clips from a difficult but rewarding mountain trail.", tags: ["Lifestyle", "Travel", "Nature"] },
+            { id: 303, title: "Post: Debate: Is functional programming the future or just a niche?", desc: "A thread discussing the pros and cons of functional vs. object-oriented programming paradigms.", tags: ["Programming", "Debate", "Technology"] },
+            { id: 304, title: "Post: Review of the latest concept electric car unveiled at the auto show.", desc: "Automotive enthusiast posts detailed critique and photos of a new electric vehicle prototype.", tags: ["Automotive", "Review", "Technology"] },
+        ],
+        'goods': [
+            { id: 401, title: "Mechanical Keyboard (Tactile Brown Switches)", desc: "High-end mechanical keyboard with customizable RGB backlighting and durable PBT keycaps.", tags: ["Hardware", "Gaming", "Office"] },
+            { id: 402, title: "Noise-Cancelling Wireless Earbuds (New Model)", desc: "Premium audio device with 30-hour battery life and adaptive noise cancellation.", tags: ["Audio", "Technology", "Lifestyle"] },
+            { id: 403, title: "Beginner's Guide to Digital Drawing Tablet", desc: "Affordable drawing tablet bundle including stylus, gloves, and access to online art courses.", tags: ["Art", "Design", "Hobby"] },
+            { id: 404, title: "Smart Home Temperature Sensor Pack", desc: "Four-pack of smart sensors for monitoring and automating home climate control via Wi-Fi.", tags: ["Smart Home", "DIY", "Technology"] },
+        ]
+    };
+
+    // Mapping of interests to content tags (simulating AI's cold-start profiling logic)
+    // The interest profile values are mapped to general themes.
+    const interestMapping = {
+        'Technology': 0, 'Science': 0, 'Lifestyle': 0, 'Art & Design': 0, 'Finance': 0, 'Gaming': 0,
+    };
+
+    // Tracking metrics based on user interactions
+    const metrics = {
+        totalClicks: 0, // Total clicks on any content card
+        detailClicks: { 'news': 0, 'video': 0, 'social': 0, 'goods': 0 }, // Detail view clicks per section
+        searches: [], // [新增] 追踪搜索词
+        scrollDepth: 0, // Max scroll depth (0-100)
+        moveCount: 0, // Approximate count of mouse movements
+        clickPoints: [], // Stores (x, y) coordinates of clicks for heatmap
+        timeSpent: {} // Tracks total time on section/detail views (not fully implemented)
+    };
+
+    let profileChartInstance = null;
+    let detailItem = null; // Current item in detail view
+
+    // --- Utility Functions ---
+
+    // A simple hash function to assign a score increase based on content tags
+    function applyTagsToProfile(tags) {
+        let scoreIncrease = {};
+        tags.forEach(tag => {
+            if (["Technology", "Hardware", "Programming", "DIY", "Smart Home"].includes(tag)) {
+                scoreIncrease['Technology'] = (scoreIncrease['Technology'] || 0) + 15;
+            } else if (["Science", "Exploration", "Policy", "Economy", "Business"].includes(tag)) {
+                scoreIncrease['Science'] = (scoreIncrease['Science'] || 0) + 10;
+                scoreIncrease['Finance'] = (scoreIncrease['Finance'] || 0) + 5;
+            } else if (["Lifestyle", "Travel", "Nature", "Health", "Food"].includes(tag)) {
+                scoreIncrease['Lifestyle'] = (scoreIncrease['Lifestyle'] || 0) + 15;
+            } else if (["Design", "Art", "Review", "Hobby"].includes(tag)) {
+                scoreIncrease['Art & Design'] = (scoreIncrease['Art & Design'] || 0) + 15;
+            } else if (["Gaming", "Sports", "Automotive"].includes(tag)) {
+                scoreIncrease['Gaming'] = (scoreIncrease['Gaming'] || 0) + 10;
+            } else if (["Career", "Office"].includes(tag)) {
+                 scoreIncrease['Finance'] = (scoreIncrease['Finance'] || 0) + 10;
+            }
+        });
+
+        // Apply increases and cap at 100
+        for (const key in scoreIncrease) {
+            interestMapping[key] = Math.min(100, interestMapping[key] + scoreIncrease[key]);
+        }
+    }
+
+    // Function to calculate the final profile score based on interactions
+    function calculateProfileScore() {
+        // [修改] 这一部分现在计算原始得分，而不是最终得分
+        const rawScores = { ...interestMapping }; // 复制一份，避免在归一化前修改了基础分
+
+        // 1. Movement/Activity Score (General interest/curiosity, boost all equally)
+        const activityBoost = Math.min(30, metrics.moveCount / 100);
+        for(const key in rawScores) {
+            rawScores[key] = Math.min(100, rawScores[key] + activityBoost);
+        }
+
+        // 2. Click Diversity Score (Clicks on different sections seed the profile)
+        const clickSeed = {};
+        if (metrics.detailClicks['news'] > 0 || metrics.totalClicks > 0) clickSeed['Science'] = 5;
+        if (metrics.detailClicks['video'] > 0 || metrics.totalClicks > 0) clickSeed['Technology'] = 5;
+        if (metrics.detailClicks['social'] > 0 || metrics.totalClicks > 0) clickSeed['Lifestyle'] = 5;
+        if (metrics.detailClicks['goods'] > 0 || metrics.totalClicks > 0) clickSeed['Finance'] = 5;
+
+        for(const key in clickSeed) {
+            rawScores[key] = Math.min(100, rawScores[key] + clickSeed[key]);
+        }
+
+        // 3. Reinforce specific interests based on detail clicks
+        if (metrics.detailClicks['news'] > 0) rawScores['Finance'] = Math.min(100, rawScores['Finance'] + (metrics.detailClicks['news'] * 5));
+        if (metrics.detailClicks['video'] > 0) rawScores['Art & Design'] = Math.min(100, rawScores['Art & Design'] + (metrics.detailClicks['video'] * 5));
+        if (metrics.detailClicks['social'] > 0) rawScores['Gaming'] = Math.min(100, rawScores['Gaming'] + (metrics.detailClicks['social'] * 5));
+        if (metrics.detailClicks['goods'] > 0) rawScores['Technology'] = Math.min(100, rawScores['Technology'] + (metrics.detailClicks['goods'] * 5));
+
+        // [新增] 归一化逻辑 (Normalization)
+        const normalizedProfile = {};
+        const totalScore = Object.values(rawScores).reduce((sum, score) => sum + score, 0);
+
+        if (totalScore === 0) {
+            // 如果没有分数，返回原始的0分（或平均分配）
+             for(const key in rawScores) {
+                normalizedProfile[key] = 0;
+            }
+            return normalizedProfile;
+        }
+
+        for(const key in rawScores) {
+            // 计算百分比
+            normalizedProfile[key] = (rawScores[key] / totalScore) * 100;
+        }
+
+        return normalizedProfile; // 返回归一化后的百分比画像
+    }
+
+
+    // --- DOM Rendering Functions ---
+
+    // Renders the current content items in the feed
+    function renderContent(sectionName, gridElementId, data) {
+        const grid = document.getElementById(gridElementId);
+        if (!grid) return;
+        grid.innerHTML = ''; // Clear previous content
+
+        data.forEach(item => {
+            const tagClass = sectionName + '-tag';
+            const imageUrl = `https://placehold.co/300x180/${getHashColor(item.id)}/ffffff?text=${sectionName.toUpperCase()}+${item.id}`;
+            const html = `
+                <div class="card" data-section="${sectionName}" data-item-id="${item.id}" onclick="handleItemClick('${sectionName}', ${item.id})">
+                    <div class="card-img-wrap">
+                        <img class="card-img" src="${imageUrl}" alt="${item.title}" onerror="this.onerror=null; this.src='https://placehold.co/300x180/0ea5e9/ffffff?text=Image+Not+Found'"/>
+                    </div>
+                    <div class="card-content">
+                        <span class="card-tag ${tagClass}">${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}</span>
+                        <h4 class="card-title">${item.title}</h4>
+                        <p class="card-text">${item.desc}</p>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += html;
+        });
+    }
+
+    function mountNews() { renderContent('news', 'newsGrid', contentData.news); }
+    function mountVideos() { renderContent('video', 'videoGrid', contentData.video); }
+    function mountSocial() { renderContent('social', 'socialGrid', contentData.social); }
+    function mountGoods() { renderContent('goods', 'goodsGrid', contentData.goods); }
+
+    // Renders the profile in the sidebar
+    function renderProfile() {
+        const profileContainer = document.getElementById('profileItems');
+        if (!profileContainer) return;
+        profileContainer.innerHTML = '';
+        const profile = calculateProfileScore(); // 获取归一化后的画像
+
+        let totalPercentage = 0; // 用于验证总和
+
+        for (const [interest, score] of Object.entries(profile)) {
+            totalPercentage += score;
+            const percentage = score.toFixed(1); // 保留一位小数
+
+            const html = `
+                <div class="profile-item">
+                    <span>${interest}</span>
+                    <!-- [修改] 将值改为百分比 -->
+                    <span class="profile-item-val">${percentage} %</span>
+                </div>
+                <div class="profile-bar-wrap">
+                    <!-- [修改] 进度条宽度使用百分比 -->
+                    <div class="profile-bar" style="width: ${percentage}%; background-color: var(--cold);"></div>
+                </div>
+            `;
+            profileContainer.innerHTML += html;
+        }
+        
+        // [新增] 添加总和验证行
+        profileContainer.innerHTML += `
+            <div class="profile-total">
+                <div class="profile-item">
+                    <span>Total</span>
+                    <span class="profile-item-val">${totalPercentage.toFixed(1)} %</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Renders the recommendation section in the sidebar
+    function updateRecommendations() {
+        const recContainer = document.getElementById('recommendations');
+        if (!recContainer) return;
+        recContainer.innerHTML = '';
+        const profile = calculateProfileScore();
+        
+        // [修改] 推荐逻辑需要基于归一化后的百分比
+        let recommendedSections = [];
+
+        // [修改] 更新推荐逻辑以使用新的百分比分数
+        // 阈值从 50/40/30 调整为百分比（例如 > 25%）
+        if (profile['Technology'] >= 25) recommendedSections.push("Goods (Tech)");
+        if (profile['Science'] >= 20) recommendedSections.push("News (Science)");
+        if (profile['Lifestyle'] >= 15) recommendedSections.push("Video (Lifestyle)");
+        if (profile['Gaming'] >= 15) recommendedSections.push("Social (Gaming)");
+        if (profile['Finance'] >= 25) recommendedSections.push("News (Business)");
+        if (profile['Art & Design'] >= 20) recommendedSections.push("Goods (Design)");
+
+        if (recommendedSections.length === 0) {
+             recContainer.innerHTML = '<div class="recommendation-item"><strong>No clear profile yet.</strong> Interact with the feed to generate recommendations!</div>';
+        } else {
+            // Sort recommendations based on profile score (descending)
+            const sortedRecs = recommendedSections.sort((a, b) => {
+                // [修改] 确保我们比较的是正确的 profile键
+                const keyA = a.includes('Tech') ? 'Technology' : a.includes('Science') ? 'Science' : a.includes('Lifestyle') ? 'Lifestyle' : a.includes('Gaming') ? 'Gaming' : a.includes('Business') ? 'Finance' : 'Art & Design';
+                const keyB = b.includes('Tech') ? 'Technology' : b.includes('Science') ? 'Science' : b.includes('Lifestyle') ? 'Lifestyle' : b.includes('Gaming') ? 'Gaming' : b.includes('Business') ? 'Finance' : 'Art & Design';
+                
+                const scoreA = profile[keyA] || 0;
+                const scoreB = profile[keyB] || 0;
+                return scoreB - scoreA;
+            });
+
+            sortedRecs.forEach(rec => {
+                const sectionTag = rec.split(' ')[0];
+                const typeTag = rec.includes('(') ? rec.match(/\((.*?)\)/)[1] : '';
+                recContainer.innerHTML += `
+                    <div class="recommendation-item">
+                        <span class="rec-tag">${sectionTag}</span>
+                        ${typeTag ? `<span class="rec-tag">${typeTag}</span>` : ''}
+                        We predict you will enjoy this category based on your current interactions.
+                    </div>
+                `;
+            });
+        }
+    }
+
+
+    /**
+     * [新增] 搜索栏过滤器和追踪器
+     * Handles search input, filters content, and tracks the search query.
+     */
+    function handleSearch(event) {
+        const query = event.target.value.trim().toLowerCase();
+        
+        // 1. Tracking: 记录搜索词
+        if (query.length > 2 && (metrics.searches.length === 0 || metrics.searches[metrics.searches.length - 1] !== query)) {
+            metrics.searches.push(query);
+            // 强制更新画像，因为搜索是一个强烈的兴趣信号
+            applyTagsToProfile(query.split(' ')); // 使用 applyTagsToProfile 来处理搜索词
+            renderProfile();
+            updateRecommendations();
+        }
+        if(document.getElementById('metricSearchCount')) {
+            document.getElementById('metricSearchCount').textContent = metrics.searches.length;
+        }
+
+        // 2. Filtering: 过滤内容
+        const allCards = document.querySelectorAll('.card-grid .card');
+        
+        allCards.forEach(card => {
+            const titleEl = card.querySelector('.card-title');
+            const summaryEl = card.querySelector('.card-text');
+            const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+            const summary = summaryEl ? summaryEl.textContent.toLowerCase() : '';
+            
+            const matches = title.includes(query) || summary.includes(query);
+            
+            card.style.display = (query === "" || matches) ? 'block' : 'none';
+        });
+    }
+
+
+    // --- Interaction Handlers and Tracking ---
+
+    // Handles click on an item card
+    function handleItemClick(sectionName, itemId) {
+        metrics.totalClicks++;
+        metrics.detailClicks[sectionName]++;
+        // Find the full item object
+        const item = contentData[sectionName].find(i => i.id === itemId);
+        detailItem = item;
+
+        // Apply a score boost based on the item's tags (Cold-Start Profiling)
+        applyTagsToProfile(item.tags);
+
+        // Update UI and switch to detail view
+        renderProfile();
+        updateRecommendations();
+        showDetail(sectionName, item);
+    }
+
+    // Displays the detail view for a specific item
+    function showDetail(sectionName, item) {
+        document.getElementById('detailTag').textContent = sectionName.charAt(0).toUpperCase() + sectionName.slice(1);
+        document.getElementById('detailTitle').textContent = item.title;
+        document.getElementById('detailDescription').textContent = item.desc + (item.desc.length > 50 ? ' ' + item.desc : '') + ' Full detailed content about the ' + sectionName + ' item. This is the deep view where the AI registers high-value interest.';
+
+        // Use a consistent placeholder image for detail view
+        const imageUrl = `https://placehold.co/800x400/${getHashColor(item.id)}/ffffff?text=Detail+View+Image`;
+        document.getElementById('detailImage').src = imageUrl;
+
+        showSection('detail');
+    }
+
+    // Renders the charts and metrics in the analysis section
+    function renderAnalysis() {
+        // 1. Render Basic Metrics
+        document.getElementById('metricClicks').textContent = metrics.totalClicks;
+        document.getElementById('metricDetailViews').textContent = Object.values(metrics.detailClicks).reduce((a, b) => a + b, 0);
+        document.getElementById('metricSearchCount').textContent = metrics.searches.length;
+        document.getElementById('metricMoveCount').textContent = metrics.moveCount;
+        document.getElementById('metricScrollDepth').textContent = `${metrics.scrollDepth}%`;
+
+        // 2. Render Profile Chart (Radar Chart)
+        const profile = calculateProfileScore(); // 获取归一化后的画像
+        const profileCtx = document.getElementById('profileChart').getContext('2d');
+
+        if (profileChartInstance) {
+            profileChartInstance.destroy();
+        }
+
+        profileChartInstance = new Chart(profileCtx, {
+            type: 'radar',
+            data: {
+                labels: Object.keys(profile),
+                datasets: [{
+                    label: 'Interest Score (Normalized %)', // [修改] 标签更新
+                    data: Object.values(profile), // [修改] 使用归一化数据
+                    backgroundColor: 'rgba(14, 165, 233, 0.2)', // var(--cold-20)
+                    borderColor: 'rgb(14, 165, 233)', // var(--cold)
+                    pointBackgroundColor: 'rgb(14, 165, 233)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(14, 165, 233)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { display: false },
+                        suggestedMin: 0,
+                        suggestedMax: 100, // [修改] 最大值现在是100%（虽然雷达图会自动调整）
+                        ticks: { stepSize: 25 },
+                        pointLabels: { font: { size: 14, weight: 'bold' } }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'AI Cold-Start Interest Profile' }
+                }
+            }
+        });
+
+        // 3. Render Heatmap (Simple Canvas)
+        renderHeatmap();
+    }
+
+    // Simple function to get a color based on item ID (to make placeholders look different)
+    function getHashColor(id) {
+        const colors = ['2563eb', '059669', 'b45309', '0ea5e9', '7c3aed', 'db2777'];
+        return colors[id % colors.length];
+    }
+
+    // Renders a simple heatmap for click points on the canvas
+    function renderHeatmap() {
+        const heat = document.getElementById('heatmapCanvas');
+        const hctx = heat.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+
+        // Set canvas resolution for crisp drawing (important for retina screens)
+        const container = heat.parentElement;
+        heat.width = container.clientWidth * dpr;
+        heat.height = container.clientHeight * dpr;
+        hctx.scale(dpr, dpr);
+        heat.style.width = container.clientWidth + 'px';
+        heat.style.height = container.clientHeight + 'px';
+
+        hctx.clearRect(0, 0, heat.width, heat.height);
+
+        // Draw the title
+        hctx.fillStyle = '#0f172a';
+        hctx.font = '16px system-ui';
+        hctx.fillText('Click & Interaction Heatmap', 10, 20);
+
+        // Draw click points
+        metrics.clickPoints.forEach(point => {
+            // Map the normalized (0-1000) coordinates back to the current canvas size
+            const x = (point.x / 1000) * container.clientWidth;
+            const y = (point.y / 1000) * container.clientHeight;
+
+            hctx.beginPath();
+            // Use a warm color to represent 'heat' or interaction
+            hctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; // Red
+            hctx.arc(x, y, 8, 0, Math.PI * 2);
+            hctx.fill();
+
+            // Draw a faint glow (larger circle)
+            hctx.beginPath();
+            hctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+            hctx.arc(x, y, 15, 0, Math.PI * 2);
+            hctx.fill();
+        });
+    }
+
+    // Attaches interaction trackers to a given element
+    function attachTrackers(element, section) {
+        element.addEventListener('click', (e) => {
+            // Record click point for heatmap
+            const rect = element.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Normalize coordinates to 0-1000 scale for heatmap consistency
+            const normalizedX = (x / rect.width) * 1000;
+            const normalizedY = (y / rect.height) * 1000;
+            metrics.clickPoints.push({ x: normalizedX, y: normalizedY, section: section });
+
+            // Ensure the main click handler on the card is called
+            if (e.target.closest('.card')) {
+                // The main card click handler handles metrics.totalClicks
+            } else {
+                 metrics.totalClicks++;
+            }
+        });
+    }
+
+    // --- Main Logic and Initializers ---
+
+    // Function to switch between main views
+    function showSection(name) {
+        const sections = ['feed', 'detail', 'analysis'];
+        sections.forEach(sec => {
+            document.getElementById(sec).style.display = sec === name ? 'block' : 'none';
+        });
+
+        // Update active navigation button
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-section') === name);
+        });
+
+        if (name === 'feed') {
+            updateRecommendations();
+        } else if (name === 'analysis') {
+            renderAnalysis();
+        }
+    }
+
+    // Handler for scroll depth tracking
+    addEventListener('scroll', () => {
+        const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const currentScroll = window.scrollY;
+        const depth = Math.round((currentScroll / docHeight) * 100);
+        metrics.scrollDepth = Math.max(metrics.scrollDepth, depth);
+    });
+
+    // Handler for mouse movement tracking (throttled)
+    let lastMM = 0;
+    addEventListener("mousemove", () => {
+        const now = performance.now();
+        // Throttle to about 12 updates per second
+        if (now - lastMM > 80) {
+            metrics.moveCount++;
+            lastMM = now;
+        }
+    });
+
+    // Attach trackers to section containers to capture general interaction
+    document.querySelectorAll("[data-section-name]").forEach(secEl => {
+        const sec = secEl.getAttribute("data-section-name");
+        attachTrackers(secEl, sec);
+    });
+
+    // Reset button functionality
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        // Reset all metrics
+        metrics.totalClicks = 0;
+        Object.keys(metrics.detailClicks).forEach(t => { metrics.detailClicks[t] = 0; });
+        metrics.clickPoints.length = 0;
+        metrics.moveCount = 0;
+        metrics.searches.length = 0; // 确保重置搜索
+        metrics.scrollDepth = 0;
+
+        // [新增] 清空搜索栏
+        const searchBarEl = document.getElementById('searchBar');
+        if (searchBarEl) {
+            searchBarEl.value = '';
+        }
+
+        // Reset profile scores
+        for(const k in interestMapping){ interestMapping[k] = 0; }
+        
+        // [修改] 重置搜索栏（如果存在）
+        const searchBarElReset = document.getElementById('searchBar');
+        if (searchBarElReset) {
+            searchBarElReset.value = '';
+            // Manually trigger an input event to clear the filter
+            searchBarElReset.dispatchEvent(new Event('input'));
+        }
+
+        // Re-render feed and profile
+        updateRecommendations();
+        renderProfile();
+
+        // Show a success message (using the console for this simple demo)
+        console.log("Profile Reset Successful! Interaction metrics and interest scores are cleared.");
+        // Simple visual feedback
+        const btn = document.getElementById('resetBtn');
+        const originalText = btn.textContent;
+        btn.textContent = 'Reset Successful!';
+        setTimeout(() => { btn.textContent = originalText; }, 1500);
+
+        // Switch back to feed
+        showSection("feed");
+    });
+
+
+    // --- Cookie Consent Logic ---
+
+    const ov = document.getElementById("cookieOverlay");
+    const app = document.getElementById("app");
+    const blocked = document.getElementById("blocked");
+
+    // FORCE cookie popup for every visit
+localStorage.removeItem('cookieConsent');
+// Check consent status on load
+    if (localStorage.getItem("cookieConsent") === "true") {
+        ov.style.display = "none";
+        if (app) app.style.display = "block";
+        // Initialize content only if accepted
+        mountNews(); mountVideos(); mountSocial(); mountGoods();
+        renderProfile();
+        updateRecommendations();
+
+        // [修改] 确保在接受后绑定搜索栏事件
+        const searchBarEl = document.getElementById('searchBar');
+        if (searchBarEl) {
+            searchBarEl.addEventListener('input', handleSearch);
+        }
+    } else if (localStorage.getItem("cookieConsent") === "false") {
+        ov.style.display = "none";
+        if (blocked) blocked.style.display = "block";
+    } else {
+        // Show overlay if no choice has been made
+        ov.style.display = "flex";
+    }
+
+    document.getElementById("acceptBtn").onclick = () => {
+        localStorage.setItem("cookieConsent", "true");
+        ov.style.display = "none";
+        if (app) app.style.display = "block";
+        if (blocked) blocked.style.display = "none";
+        // Initialize content after acceptance
+        mountNews(); mountVideos(); mountSocial(); mountGoods();
+        renderProfile();
+        updateRecommendations();
+
+        // [修改] 确保在接受后绑定搜索栏事件
+        const searchBarEl = document.getElementById('searchBar');
+        if (searchBarEl) {
+            searchBarEl.addEventListener('input', handleSearch);
+        }
+    };
+
+    document.getElementById("rejectBtn").onclick = () => {
+        localStorage.setItem("cookieConsent", "false");
+        ov.style.display = "none";
+        if (app) app.style.display = "none";
+        if (blocked) blocked.style.display = "block";
+    };
+
+    // Initialize all content mounts and rendering on accepted load
+    if (localStorage.getItem("cookieConsent") === "true") {
+        mountNews(); mountVideos(); mountSocial(); mountGoods();
+        updateRecommendations();
+        renderProfile();
+
+        // [修改] 确保在接受后绑定搜索栏事件
+        const searchBarEl = document.getElementById('searchBar');
+        if (searchBarEl) {
+            searchBarEl.addEventListener('input', handleSearch);
+        }
+    }
+</script>
 </body>
 </html>
