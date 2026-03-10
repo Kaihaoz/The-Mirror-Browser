@@ -1,5 +1,6 @@
 # The Mirror Browser
-🔗 **Live Demo**: https://your-username.github.io/The-Mirror-Browser/
+
+🔗  [**Live Demo**](https://kaihaoz.github.io/The-Mirror-Browser/)
 
 ## Project Overview
 This project is an interactive prototype developed based on the Research-through-Design methodology, focusing on exploring the implementation path of "algorithmic transparency" in browser products. It aims to solve users' privacy anxiety caused by "black-box" algorithms through real-time behavior tracking and interest profile visualization, while balancing privacy compliance and user experience.
